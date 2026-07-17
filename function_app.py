@@ -3,6 +3,7 @@ import logging
 import os
 from azure.storage.blob import BlobServiceClient
 import pandas as pd
+import json
 
 app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 
@@ -40,7 +41,8 @@ def http_trigger(req: func.HttpRequest) -> func.HttpResponse:
     # If no data found for that diet
     if df.empty:
         return func.HttpResponse(
-            body="No records found for this diet.",
+            body=json.dumps({"message": "No records found for this diet."}),
+            mimetype="application/json",
             status_code=200
         )
 
@@ -56,6 +58,7 @@ def http_trigger(req: func.HttpRequest) -> func.HttpResponse:
     }
 
     return func.HttpResponse(
-        body=str(result),
+        body=json.dumps(result),
+        mimetype="application/json",
         status_code=200
     )
