@@ -46,7 +46,7 @@ def http_trigger(req: func.HttpRequest) -> func.HttpResponse:
             status_code=200
         )
 
-    # Real analysis
+    # Summary analysis
     result = {
         "total_records": len(df),
         "average_calories": float(df["Calories"].mean()),
@@ -57,8 +57,22 @@ def http_trigger(req: func.HttpRequest) -> func.HttpResponse:
         "max_calories": float(df["Calories"].max())
     }
 
+    # Chart-ready data
+    chart_data = {
+        "calories_list": df["Calories"].tolist(),
+        "protein_list": df["Protein"].tolist(),
+        "carbs_list": df["Carbs"].tolist(),
+        "fat_list": df["Fat"].tolist()
+    }
+
+    # Combine both
+    final_output = {
+        "summary": result,
+        "charts": chart_data
+    }
+
     return func.HttpResponse(
-        body=json.dumps(result),
+        body=json.dumps(final_output),
         mimetype="application/json",
         status_code=200
     )
