@@ -1,36 +1,42 @@
 import azure.functions as func
 import logging
+import os
+from azure.storage.blob import BlobServiceClient
+import pandas as pd
 
 app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 
 @app.route(route="http_trigger")
 def http_trigger(req: func.HttpRequest) -> func.HttpResponse:
-    logging.info("Diet analysis HTTP trigger function started.")
+    logging.info("Diet analysis HTTP trigger started.")
 
-    # STEP 1 — Read JSON body safely
+    # Read JSON input
     try:
         data = req.get_json()
     except ValueError:
         data = {}
 
-    # STEP 2 — Example input (you will replace this later)
-    # If user sends: { "diet": "keto" }
     diet_type = data.get("diet", None)
 
-    # STEP 3 — Placeholder logic (you will replace with real analysis)
-    if diet_type:
-        result = {
-            "message": "Diet analysis completed",
-            "diet_type": diet_type,
-            "status": "success"
-        }
-        return func.HttpResponse(
-            body=str(result),
-            status_code=200
-        )
+    # Connect to Blob Storage using environment variable
+    connect_str = os.getenv("AzureWebJobsStorage")
+    blob_service = BlobServiceClient.from_connection_string(connect_str)
 
-    # STEP 4 — Default response
+    # Container + file name
+    container_name = "dietdata"
+    blob_name = "All_Diets.csv"
+
+    # Download CSV
+    blob_client = blob_service.get_blob_client(container=container_name, blob=blob_name)
+    csv_data = blob_client.download_blob().readall()
+
+    # Load into pandas
+    df = pd.read_csv(pd.io.common.BytesIO(csv_data))
+
+    # Placeholder analysis
+    summary = df.describe().to_dict()
+
     return func.HttpResponse(
-        "Send JSON like {\"diet\": \"keto\"} to run analysis.",
+        body=str(summary),
         status_code=200
     )
