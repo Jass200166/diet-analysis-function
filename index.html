@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Diet Cloud Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h1>Diet Analysis Cloud Dashboard</h1>
+
+    <label>Select Diet:</label>
+    <select id="dietSelect">
+        <option value="keto">Keto</option>
+        <option value="vegan">Vegan</option>
+        <option value="paleo">Paleo</option>
+        <option value="mediterranean">Mediterranean</option>
+    </select>
+
+    <button onclick="loadData()">Load Data</button>
+
+    <p id="meta"></p>
+
+    <h2>Calories (Bar Chart)</h2>
+    <canvas id="caloriesChart"></canvas>
+
+    <h2>Protein (Line Chart)</h2>
+    <canvas id="proteinChart"></canvas>
+
+    <h2>Macro Split (Pie Chart)</h2>
+    <canvas id="macroChart"></canvas>
+
+    <script>
+        async function loadData() {
+            const diet = document.getElementById("dietSelect").value;
+            const start = performance.now();
+
+            const response = await fetch("YOUR_FUNCTION_URL", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ diet })
+            });
+
+            const data = await response.json();
+            const end = performance.now();
+
+            document.getElementById("meta").innerText =
+                `Diet: ${diet} | Function time: ${(end - start).toFixed(2)} ms`;
+
+            const calories = data.charts.calories_list;
+            const protein = data.charts.protein_list;
+
+            const avgCarbs = data.summary.average_carbs;
+            const avgProtein = data.summary.average_protein;
+            const avgFat = data.summary.average_fat;
+
+            new Chart(document.getElementById("caloriesChart"), {
+                type: "bar",
+                data: {
+                    labels: calories.map((_, i) => i + 1),
+                    datasets: [{
+                        label: "Calories",
+                        data: calories,
+                        backgroundColor: "rgba(255, 99, 132, 0.5)"
+                    }]
+                }
+            });
+
+            new Chart(document.getElementById("proteinChart"), {
+                type: "line",
+                data: {
+                    labels: protein.map((_, i) => i + 1),
+                    datasets: [{
+                        label: "Protein",
+                        data: protein,
+                        borderColor: "blue"
+                    }]
+                }
+            });
+
+            new Chart(document.getElementById("macroChart"), {
+                type: "pie",
+                data: {
+                    labels: ["Carbs", "Protein", "Fat"],
+                    datasets: [{
+                        data: [avgCarbs, avgProtein, avgFat],
+                        backgroundColor: [
+                            "rgba(54, 162, 235, 0.5)",
+                            "rgba(75, 192, 192, 0.5)",
+                            "rgba(255, 206, 86, 0.5)"
+                        ]
+                    }]
+                }
+            });
+        }
+    </script>
+</body>
+</html>
