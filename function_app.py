@@ -6,20 +6,18 @@ import pandas as pd
 import json
 from io import BytesIO
 
-# Azure Function App (anonymous access)
-app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
+app = func.FunctionApp()
 
 # ---------------------------------------------------------
-# HTTP Trigger Route (THIS FIXES YOUR 404 ERROR)
+# HTTP Trigger (your existing function)
 # ---------------------------------------------------------
-@app.function_name(name="ProcessDiet")
-@app.route(route="ProcessDiet", auth_level=func.AuthLevel.ANONYMOUS)
-def process_diet(req: func.HttpRequest) -> func.HttpResponse:
+@app.route(route="http_trigger", auth_level=func.AuthLevel.ANONYMOUS)
+def http_trigger(req: func.HttpRequest) -> func.HttpResponse:
     logging.info("Diet analysis HTTP trigger started.")
 
     try:
         # ---------------------------------------------------------
-        # Connect to Azure Storage using Function App's connection string
+        # Connect to Azure Storage
         # ---------------------------------------------------------
         connect_str = os.getenv("AzureWebJobsStorage")
         blob_service = BlobServiceClient.from_connection_string(connect_str)
