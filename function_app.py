@@ -4,75 +4,58 @@ import os
 from azure.storage.blob import BlobServiceClient
 import pandas as pd
 import json
+from io import BytesIO
 
+# Azure Function App (anonymous access)
 app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 
-@app.route(route="http_trigger")
-def http_trigger(req: func.HttpRequest) -> func.HttpResponse:
+# ---------------------------------------------------------
+# HTTP Trigger Route (THIS FIXES YOUR 404 ERROR)
+# ---------------------------------------------------------
+@app.function_name(name="ProcessDiet")
+@app.route(route="ProcessDiet", auth_level=func.AuthLevel.ANONYMOUS)
+def process_diet(req: func.HttpRequest) -> func.HttpResponse:
     logging.info("Diet analysis HTTP trigger started.")
 
-    # Read JSON input
     try:
-        data = req.get_json()
-    except ValueError:
-        data = {}
+        # ---------------------------------------------------------
+        # Connect to Azure Storage using Function App's connection string
+        # ---------------------------------------------------------
+        connect_str = os.getenv("AzureWebJobsStorage")
+        blob_service = BlobServiceClient.from_connection_string(connect_str)
 
-    diet_type = data.get("diet", None)
+        # Your Azure Storage container + blob
+        container_name = "dietdata"
+        blob_name = "All_Diets.csv"
 
-    # Connect to Blob Storage using environment variable
-    connect_str = os.getenv("AzureWebJobsStorage")
-    blob_service = BlobServiceClient.from_connection_string(connect_str)
+        blob_client = blob_service.get_blob_client(
+            container=container_name,
+            blob=blob_name
+        )
 
-    # Container + file name
-    container_name = "dietdata"
-    blob_name = "All_Diets.csv"
+        # ---------------------------------------------------------
+        # Read CSV file from Azure Blob Storage
+        # ---------------------------------------------------------
+        csv_bytes = blob_client.download_blob().readall()
+        df = pd.read_csv(BytesIO(csv_bytes))
 
-    # Download CSV
-    blob_client = blob_service.get_blob_client(container=container_name, blob=blob_name)
-    csv_data = blob_client.download_blob().readall()
+        # ---------------------------------------------------------
+        # Generate summary statistics
+        # ---------------------------------------------------------
+        summary = df.describe(include="all").to_dict()
 
-    # Load into pandas
-    df = pd.read_csv(pd.io.common.BytesIO(csv_data))
-
-    # Filter by diet type if provided
-    if diet_type:
-        df = df[df['Diet'].str.lower() == diet_type.lower()]
-
-    # If no data found for that diet
-    if df.empty:
+        # ---------------------------------------------------------
+        # Return JSON response
+        # ---------------------------------------------------------
         return func.HttpResponse(
-            body=json.dumps({"message": "No records found for this diet."}),
+            json.dumps(summary, indent=2),
             mimetype="application/json",
             status_code=200
         )
 
-    # Summary analysis
-    result = {
-        "total_records": len(df),
-        "average_calories": float(df["Calories"].mean()),
-        "average_protein": float(df["Protein"].mean()),
-        "average_carbs": float(df["Carbs"].mean()),
-        "average_fat": float(df["Fat"].mean()),
-        "min_calories": float(df["Calories"].min()),
-        "max_calories": float(df["Calories"].max())
-    }
-
-    # Chart-ready data
-    chart_data = {
-        "calories_list": df["Calories"].tolist(),
-        "protein_list": df["Protein"].tolist(),
-        "carbs_list": df["Carbs"].tolist(),
-        "fat_list": df["Fat"].tolist()
-    }
-
-    # Combine both
-    final_output = {
-        "summary": result,
-        "charts": chart_data
-    }
-
-    return func.HttpResponse(
-        body=json.dumps(final_output),
-        mimetype="application/json",
-        status_code=200
-    )
+    except Exception as e:
+        logging.error(f"Error: {e}")
+        return func.HttpResponse(
+            f"Error processing diet data: {str(e)}",
+            status_code=500
+        )
