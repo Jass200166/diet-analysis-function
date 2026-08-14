@@ -1,0 +1,18 @@
+{
+  "scriptFile": "../function_app.py",
+  "entryPoint": "http_trigger",
+  "bindings": [
+    {
+      "type": "httpTrigger",
+      "direction": "in",
+      "authLevel": "anonymous",
+      "methods": [ "get", "post" ],
+      "route": "http_trigger"
+    },
+    {
+      "type": "http",
+      "direction": "out",
+      "name": "$return"
+    }
+  ]
+}
