@@ -92,14 +92,7 @@ If not logged in, it redirects back to login.
 
 ---
 
-## Instructor Testing Checklist
 
-- Backend runs with func start
-- Login API returns success
-- Recipes API returns items
-- Login page works
-- Dashboard loads recipes
-- Filters/search/pagination work
 
 ---
 
