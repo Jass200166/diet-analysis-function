@@ -13,7 +13,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         connect_str = os.getenv("AzureWebJobsStorage")
         blob_service = BlobServiceClient.from_connection_string(connect_str)
 
-        container_name = "dietdata"
+        container_name = "datasets"
         blob_name = "All_Diets.csv"
 
         blob_client = blob_service.get_blob_client(container=container_name, blob=blob_name)
