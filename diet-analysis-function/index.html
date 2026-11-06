@@ -33,7 +33,7 @@
             const diet = document.getElementById("dietSelect").value;
             const start = performance.now();
 
-            const response = await fetch("YOUR_FUNCTION_URL", {
+            const response = await fetch("https://diet-analysis-func-jass-gdfchucvgpgwgng2.canadacentral-01.azurewebsites.net/api/http_trigger", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ diet })
