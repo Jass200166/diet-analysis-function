@@ -20,8 +20,25 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         csv_bytes = blob_client.download_blob().readall()
 
         df = pd.read_csv(BytesIO(csv_bytes))
-        summary = df.describe(include="all").to_dict()
+        summary = {
+            "average_protein": float(df["Protein(g)"].mean()),
+            "average_carbs": float(df["Carbs(g)"].mean()),
+            "average_fat": float(df["Fat(g)"].mean())
+        }
 
+        response = {
+            "summary": summary,
+            "charts": {
+                "protein_list":
+            df["Protein(g)"].head(10).tolist(),
+                "calories_list": (
+                df["Protein(g)"] * 4 +
+                df["Carbs(g)"] * 4 +
+                df["Fat(g)"] * 9
+             ).head(10).tolist()
+            }
+        }
+        
         return func.HttpResponse(
             json.dumps(summary, indent=2),
             mimetype="application/json",
